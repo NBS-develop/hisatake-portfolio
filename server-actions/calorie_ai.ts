@@ -2,6 +2,8 @@
 //今回の画像送信はネットワーク通信が必要な処理(OpenAIのAPI)
 //データを遠くまで運ぶ必要がある
 
+//carolie_ai.ts
+
 'use server'
 import "server-only"
 import {OpenAI} from 'openai';
