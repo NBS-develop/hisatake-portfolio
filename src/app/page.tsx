@@ -12,6 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import CalorieDetailModal from "../../../my-next-app/components/pages/MealDetailModal"
 import{POST} from '../../../my-next-app/server-actions/calorie_ai'
 type FormData = {
   model:string
@@ -23,6 +24,8 @@ interface CalorieResult{
   fat:number;
   carbo:number;
 }
+type MealType = 'breakfast' | 'lunch' | 'dinner' |null;
+
 export default function Home() {
   const[imageFile,setImageFile] = useState<File | null>(null);
   const[material,setMaterial] = useState<string>("");
@@ -30,7 +33,13 @@ export default function Home() {
   const[loading,setLoading] = useState(false);
   const[result,setResult] = useState<CalorieResult | null>(null);
   const[error,setError] = useState<string | null>(null);
-    return(
+  const[mealType,setMealType] = useState<MealType>(null);
+  const[detailModalOpen,setDetailModalOpen] = useState(false);
+  const handleSubmit = () => {
+    console.log("テスト")
+  }
+
+    return( 
     
         
     <Dialog>
@@ -66,9 +75,15 @@ export default function Home() {
                       setMealName(mealName)
                      }}>
               </input>
-              <Button className="border border-black-500 rounded-md h-12 w-50 mt-3 ml-10 text-center flex-items-center bg-blue-500 hover:bg-blue-400">
+              <Button className="border border-black-500 rounded-md h-12 w-50 mt-3 ml-10 text-center flex-items-center bg-blue-500 hover:bg-blue-400"
+                    onClick={() => {
+                      setDetailModalOpen(true);
+                    }} 
+              >
                 次へ
               </Button>
+
+
 
             </div>
           </div>
@@ -87,10 +102,22 @@ export default function Home() {
                 </thead>
               </table>
             </div>
+
+            <CalorieDetailModal
+              isOpen={detailModalOpen}
+              onOpenChange={setDetailModalOpen}
+              onMaterialChange={setMaterial}
+              onMealTypeChange={setMealType}
+              currentMealType={mealType}
+              onCalculate={handleSubmit}
+            />
           </div>
           
         
     </Dialog>
+
+    
+
     
     
     );
