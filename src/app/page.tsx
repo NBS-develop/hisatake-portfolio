@@ -13,6 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import CalorieDetailModal from "../../../my-next-app/components/pages/MealDetailModal"
+import CalorieResultModal from "../../../my-next-app/components/pages/CalorieResultModal"
 import{POST} from '../../../my-next-app/server-actions/calorie_ai'
 type FormData = {
   model:string
@@ -35,6 +36,8 @@ export default function Home() {
   const[error,setError] = useState<string | null>(null);
   const[mealType,setMealType] = useState<MealType>(null);
   const[detailModalOpen,setDetailModalOpen] = useState(false);
+  const[resultModalOpen,setResultModalOpen] = useState(false);
+  const[aiResult,setAiResult] = useState<any | null>(null);
   const handleSubmit = () => {
     console.log("テスト")
   }
@@ -51,7 +54,6 @@ export default function Home() {
         <div className="flex gap-10 items-start">
           <div className="flex-col ">
             <div className=" border rounded mt-10 ml-10 w-200 h-110 flex items-center justify-center">
-              <Dialog>
                 <DialogTrigger asChild>
                   <Button className=" bg-blue-500 hover:bg-blue-400 text-white text-5xl font-bold border w-24 h-24 rounded-full flex items-center justify-center">
                     +
@@ -59,32 +61,18 @@ export default function Home() {
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>食事を追加</DialogTitle>
-                    <DialogDescription>
-                      
-                    </DialogDescription>
+                    <DialogTitle>写真を追加</DialogTitle>
                   </DialogHeader>
                 </DialogContent>
-              </Dialog>
             </div>
             <div className="flex">
-              <input className="border border-black-500 rounded-md h-12 w-140 mt-3 ml-10 text-center flex items-center bg-gray-100"
-                     placeholder='例：カレーライス'
-                     value={mealName || ""}
-                     onChange={ (m) => {
-                      setMealName(mealName)
-                     }}>
-              </input>
-              <Button className="border border-black-500 rounded-md h-12 w-50 mt-3 ml-10 text-center flex-items-center bg-blue-500 hover:bg-blue-400"
+              <Button className="text-2xl border border-black-500 rounded-md h-12 w-200 mt-3 ml-10 text-center flex-items-center bg-blue-500 hover:bg-blue-400"
                     onClick={() => {
                       setDetailModalOpen(true);
                     }} 
               >
                 次へ
               </Button>
-
-
-
             </div>
           </div>
             <div>
@@ -109,16 +97,30 @@ export default function Home() {
               onMaterialChange={setMaterial}
               onMealTypeChange={setMealType}
               currentMealType={mealType}
-              onCalculate={handleSubmit}
+              //受信したデータから表示用に必要な情報をを作り、Stateに格納と同時に結果表示用のモーダルオープン
+              onCalculate={(data) => {
+                setAiResult({
+                  meal_name: mealName,
+                  calorie: `${data.totalCalories} kcal`,
+                  comment:`P:${data.protein}g / F:${data.fat}g / C:${data.carbo}g`,
+                  totalCalories: data.totalCalories,
+                  protein:data.protein,
+                  fat: data.fat,
+                  carbo:data.carbo
+                });
+                setResultModalOpen(true);
+              }}
             />
+            <CalorieResultModal
+              isOpen={resultModalOpen}
+              onOpenChange={setResultModalOpen}
+              //aiResultがresultDataとしてpropsに渡す。
+              resultData={aiResult}
+            />
+
           </div>
           
         
-    </Dialog>
-
-    
-
-    
-    
+    </Dialog> 
     );
   }
