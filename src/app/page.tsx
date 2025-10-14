@@ -3,6 +3,9 @@
 'use client'
 import {useState} from 'react';
 import Head from 'next/head';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import AddAPhotoIcon from '@mui/icons-material/AddAPhoto';
+
 import{Button} from "@/components/ui/button"
 import {
   Dialog,
@@ -14,7 +17,7 @@ import {
 } from "@/components/ui/dialog"
 import CalorieDetailModal from "../../../my-next-app/components/pages/MealDetailModal"
 import CalorieResultModal from "../../../my-next-app/components/pages/CalorieResultModal"
-import{POST} from '../../../my-next-app/server-actions/calorie_ai'
+// import{POST} from '../../../my-next-app/server-actions/calorie_ai'
 type FormData = {
   model:string
   chat:string
@@ -38,6 +41,8 @@ export default function Home() {
   const[detailModalOpen,setDetailModalOpen] = useState(false);
   const[resultModalOpen,setResultModalOpen] = useState(false);
   const[aiResult,setAiResult] = useState<any | null>(null);
+  const[imageSrcBase64,setImageSrcBase64] = useState<string | null>(null);
+  
   const handleSubmit = () => {
     console.log("テスト")
   }
@@ -53,17 +58,33 @@ export default function Home() {
         </DialogHeader>
         <div className="flex gap-10 items-start">
           <div className="flex-col ">
-            <div className=" border rounded mt-10 ml-10 w-200 h-110 flex items-center justify-center">
-                <DialogTrigger asChild>
-                  <Button className=" bg-blue-500 hover:bg-blue-400 text-white text-5xl font-bold border w-24 h-24 rounded-full flex items-center justify-center">
-                    +
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>写真を追加</DialogTitle>
-                  </DialogHeader>
-                </DialogContent>
+            <div className=" border rounded mt-10 ml-10 w-200 h-110 flex items-center justify-center gap-20">
+              <Dialog>
+                  <DialogTrigger asChild>
+                    <Button className="w-[120px] h-[120px] flex items-center justify-center border-none
+                                      ring-0focus:ring-0 focus-visible:ring-0 shadow-none hover:bg-sky-400">
+                      <UploadFileIcon sx={{fontSize:100,color:"white",stroke:"none"}}/>
+                    </Button>
+                  </DialogTrigger >
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>写真を追加</DialogTitle>
+                    </DialogHeader>
+                  </DialogContent>
+              </Dialog>
+              <Dialog>
+                  <DialogTrigger asChild>
+                    <Button className="w-[120px] h-[120px] flex items-center justify-center border-none
+                                        ring-0focus:ring-0 focus-visible:ring-0 shadow-none">
+                      <AddAPhotoIcon sx={{fontSize:100,color:"white",backgroundColor:"#00BFFF",stroke:"none"}}/>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>写真を追加</DialogTitle>
+                    </DialogHeader>
+                  </DialogContent>
+                </Dialog>
             </div>
             <div className="flex">
               <Button className="text-2xl border border-black-500 rounded-md h-12 w-200 mt-3 ml-10 text-center flex-items-center bg-blue-500 hover:bg-blue-400"
@@ -94,8 +115,10 @@ export default function Home() {
             <CalorieDetailModal
               isOpen={detailModalOpen}
               onOpenChange={setDetailModalOpen}
+              // onMealNameChange={setMealName}
               onMaterialChange={setMaterial}
               onMealTypeChange={setMealType}
+              onMealNameChange={setMealName}
               currentMealType={mealType}
               //受信したデータから表示用に必要な情報をを作り、Stateに格納と同時に結果表示用のモーダルオープン
               onCalculate={(data) => {

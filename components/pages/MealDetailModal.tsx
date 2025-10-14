@@ -13,8 +13,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 
-import{POST} from '../../../my-next-app/server-actions/calorie_ai'
-
+//ServerActions
+import{calculateCalorie}from'../../server-actions/calorie_ai';
 import {RadioGroup,RadioGroupItem} from "@/components/ui/radio";
 import { Label } from "@/components/ui/label";
 type MealType = 'breakfast' | 'lunch' | 'dinner' |null;
@@ -26,6 +26,7 @@ interface CalorieDetailModalProps{
   onCalculate: (data?:any) => void;
   isOpen:boolean;
   onOpenChange: (open: boolean) => void;
+  onMealNameChange: (value: string) => void;
 }
 
 export default function CalorieDetailModal({
@@ -35,6 +36,7 @@ export default function CalorieDetailModal({
     isOpen,
     onOpenChange,
     onCalculate,
+    onMealNameChange
 }:CalorieDetailModalProps){
     const[material,setMaterial] = useState<string>("");
     const[mealName,setMealName] = useState<string>("");
@@ -47,9 +49,10 @@ export default function CalorieDetailModal({
             return;
         }
         if(!currentMealType) {
-            alert("食事の種類を選択してください");
+            alert("朝食 昼食 夕食を選択してください");
             return;
         }
+        //ここで送りたいデータをまとめる
         const formData = new FormData();
         formData.append("meal_name",mealName);
         formData.append("material",material);
@@ -58,18 +61,21 @@ export default function CalorieDetailModal({
         setIsLoading(true);
         try{
             //サーバー側のAPIルートにデータを送信
-            const res = await fetch('../../server-actions/calorie_ai',{
-                method:'POST',
-                body:formData
-            });
-            if(!res.ok){
-                throw new Error('サーバーエラー')
-            }
+            // const res = await fetch('../../server-actions/calorie_ai',{
+            //     method:'POST',
+            //     body:formData
+            // });
+
+            // if(!res.ok){
+            //     throw new Error('サーバーエラー')
+            // }
+
             //サーバーから返された結果を受け取る
-             const data = await res.json();
+             const data = await calculateCalorie(formData);//サーバーに送信、受け取り
              console.log("AIの結果",data);
              onCalculate(data);//←page.tsxに渡す
              onOpenChange(false);
+            
 
             }catch(err){
              console.error(err);
@@ -126,10 +132,11 @@ export default function CalorieDetailModal({
                         <div>
                             <input className="border border-black-500 rounded-md h-12 w-150 mt-3 ml-10 text-center flex items-center bg-gray-100"
                                 placeholder="例：カレーライス"
-                                value={mealName}
-                                onChange={ (e) => 
-                                    setMealName(e.target.value)
-                                }
+                                value={mealName}//入力されたものを表示
+                                onChange={ (e) => {
+                                    setMealName(e.target.value);
+                                    onMealNameChange(e.target.value);//親に料理名送る用
+                                }}
                             />
                         </div>
                         <div>
@@ -138,7 +145,6 @@ export default function CalorieDetailModal({
                                     disabled={isLoading}
                             >
                                 {isLoading ? '計算中...':'計算'}
-                                計算
                             </Button>
                         </div>
 

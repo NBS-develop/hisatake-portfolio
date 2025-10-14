@@ -16,10 +16,10 @@ const openai_api_key = process.env.OPENAI_API_KEY!//"!"絶対にnullでもundefa
 
 
 
-export async function POST(request: NextRequest){
+export async function calculateCalorie(formData:FormData){
   try{
     //クライアントから送られたFormDataから抽出
-    const formData = await request.formData();
+    // const formData = await request.formData();
     //料理名、材料名の抽出
     const mealName = formData.get('meal_name') ?? "" as String;
     const material = formData.get('material') ?? "" as String;
@@ -29,10 +29,11 @@ export async function POST(request: NextRequest){
 
     //mealNameかmaterialのどっちか無かったらエラー
     if ( !mealName || !material) {
-        return NextResponse.json(
-            {error: 'Miss meal data: mealName, or ingredients'}, 
-            {status: 400}
-        );
+        // return NextResponse.json(
+        //     {error: 'Miss meal data: mealName, or ingredients'}, 
+        //     {status: 400}
+        // );
+        throw new Error('Miss meal data: mealName,or ingredients')
     }
     //APIキーがない場合はエラーをスロー
     if(!openai_api_key) {
@@ -45,22 +46,22 @@ export async function POST(request: NextRequest){
 
     let imageUrlForOpenAI:string | null = null;
 
-    if(imageFile){
-        //Fileオブジェクトからバイナリデータ(ArrayBuffer)を取得
-        const imageArrayBuffer = await imageFile.arrayBuffer();
+    // if(imageFile){
+    //     //Fileオブジェクトからバイナリデータ(ArrayBuffer)を取得
+    //     const imageArrayBuffer = await imageFile.arrayBuffer();
 
-        //ArrayBufferをNode.jsのBufferに変換
-        const imageBuffer = Buffer.from(imageArrayBuffer);
+    //     //ArrayBufferをNode.jsのBufferに変換
+    //     const imageBuffer = Buffer.from(imageArrayBuffer);
 
-        //BufferをBase64文字列にエンコード(別の形式に変える)
-        const base64Image = imageBuffer.toString('base64');
+    //     //BufferをBase64文字列にエンコード(別の形式に変える)
+    //     const base64Image = imageBuffer.toString('base64');
 
-        //MIMEタイプを取得(OpenAIへのリクエストで必要)
-        const mimeType = imageFile.type;
+    //     //MIMEタイプを取得(OpenAIへのリクエストで必要)
+    //     const mimeType = imageFile.type;
 
-        //OpenAIのimage_url形式に整形
-        const imageUrlForOpenAI = `data:${mimeType};base64,${base64Image}`;
-    }
+    //     //OpenAIのimage_url形式に整形
+    //     const imageUrlForOpenAI = `data:${mimeType};base64,${base64Image}`;
+    // }
 
     
 
@@ -75,24 +76,24 @@ export async function POST(request: NextRequest){
     JSONオブジェクトの形式で、説明文やマークダウンはつけずに結果のみを出力してください。`;
 
     //imageUrlForOpenAI:画像有悲しかでOpenAIに送るメッセージの構造を切り替える
-    const userContent: ChatCompletionContentPart[] = imageUrlForOpenAI ? [
+    const userContent: ChatCompletionContentPart[] = [
         {
             type: "text",
             text:`食事名：${mealName}\n材料:${material}\nこの食事のカロリーと栄養を教えてください`
         },
-        {
-            type:"image_url",
-            image_url:{
-                url:imageUrlForOpenAI as string,
-                detail:"auto" as const
-            }
-        }
-    ] : [
-        {
-            type:"text",
-            text:`食事名:${mealName}\n材料:${material}\nこの食事のカロリーと栄養素を教えてください`
+    //     {
+    //         type:"image_url",
+    //         image_url:{
+    //             url:imageUrlForOpenAI as string,
+    //             detail:"auto" as const
+    //         }
+    //     }
+    // ] : [
+    //     {
+    //         type:"text",
+    //         text:`食事名:${mealName}\n材料:${material}\nこの食事のカロリーと栄養素を教えてください`
 
-        }
+    //     }
     ];
         
     
@@ -120,21 +121,26 @@ export async function POST(request: NextRequest){
     const calorieResult = JSON.parse(jsonText);
 
     //AIが計算した結果のオブジェクトをクライアントに渡す(200で成功と判断)
-    return NextResponse.json(calorieResult,{status:200});
+    // return NextResponse.json(calorieResult,{status:200});
+     return calorieResult;
 
   }catch (error) {
     console.error(error);
 
-    return NextResponse.json(
-        {
-            
-            error: 'An internal server error occurred during calorie calculation',
-            //具体的なエラー内容を伝える
-            details:error instanceof Error ? error.message : 'Unknown error'
-        },
-        {status:500}//エラーを意味する
-    );
+    throw new Error(error instanceof Error ? error.message: 'Unknown error');
   }
+
+
+//     return NextResponse.json(
+//         {
+            
+//             error: 'An internal server error occurred during calorie calculation',
+//             //具体的なエラー内容を伝える
+//             details:error instanceof Error ? error.message : 'Unknown error'
+//         },
+//         {status:500}//エラーを意味する
+//     );
+//   }
 
 }
 //status:〇〇➡200:OK、400番台:クライアント側の問題、500番台:サーバー側の問題
