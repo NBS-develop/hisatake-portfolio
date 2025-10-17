@@ -2,7 +2,7 @@
 
 'use client'
 
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import{Button} from "@/components/ui/button"
 import {
   Dialog,
@@ -17,6 +17,7 @@ import {
 import{calculateCalorie}from'../../server-actions/calorie_ai';
 import {RadioGroup,RadioGroupItem} from "@/components/ui/radio";
 import { Label } from "@/components/ui/label";
+import Image from "next/image";
 type MealType = 'breakfast' | 'lunch' | 'dinner' |null;
 
 interface CalorieDetailModalProps{
@@ -27,6 +28,8 @@ interface CalorieDetailModalProps{
   isOpen:boolean;
   onOpenChange: (open: boolean) => void;
   onMealNameChange: (value: string) => void;
+  imageFile: File | null;
+  imageSrcBase64:string | null;
 }
 
 export default function CalorieDetailModal({
@@ -36,11 +39,24 @@ export default function CalorieDetailModal({
     isOpen,
     onOpenChange,
     onCalculate,
-    onMealNameChange
+    onMealNameChange,
+    imageFile,
+    imageSrcBase64
 }:CalorieDetailModalProps){
     const[material,setMaterial] = useState<string>("");
     const[mealName,setMealName] = useState<string>("");
     const[isLoading,setIsLoading] = useState(false);
+    const[lastRequestTime,setLastRequestTime] = useState<number>(0);
+
+    //モーダルが閉じたときStateをクリーンアップ
+    useEffect(() => {
+        if (!isOpen) {
+            const timer = setTimeout(() => {
+                setIsLoading(false);
+            },300);
+            return () => clearTimeout(timer);
+        } 
+    },[isOpen]);
 
     const handleSend = async () =>{
 
@@ -57,18 +73,12 @@ export default function CalorieDetailModal({
         formData.append("meal_name",mealName);
         formData.append("material",material);
         formData.append("meal_type",currentMealType || "");
+        if(imageFile){
+            formData.append("image",imageFile) ;
+        }
 
         setIsLoading(true);
         try{
-            //サーバー側のAPIルートにデータを送信
-            // const res = await fetch('../../server-actions/calorie_ai',{
-            //     method:'POST',
-            //     body:formData
-            // });
-
-            // if(!res.ok){
-            //     throw new Error('サーバーエラー')
-            // }
 
             //サーバーから返された結果を受け取る
              const data = await calculateCalorie(formData);//サーバーに送信、受け取り
@@ -77,13 +87,23 @@ export default function CalorieDetailModal({
              onOpenChange(false);
             
 
-            }catch(err){
-             console.error(err);
-             alert("AIとの通信に失敗しました。");
-            }finally{
-                setIsLoading(false);
+        }catch(err){
+         console.error(err);
+         if (err instanceof Error) {
+            if(err.message.includes('タイムアウト')){
+                alert("処理時間に時間がかかりすぎています。もう一度お試しください。");
+            }else if(err.message.includes('Rate limit')){
+                alert('APIの利用制限に達しました。少し時間をおいてから再度お試しください。');
+            }else {
+                alert(`エラー:${err.message}`);
             }
+         }else {
+            alert("AIとの通信に失敗しました。");
+         }
+        }finally{
+            setIsLoading(false);
         }
+    }
     
     return(
         <Dialog open={isOpen} onOpenChange={onOpenChange} >
@@ -93,8 +113,8 @@ export default function CalorieDetailModal({
                         食事詳細
                     </DialogTitle>
                 </DialogHeader>
-                <div className="flex justify-between ">
-                    <div className="flex flex-col ">   
+                <div className="flex justify-between p-4">
+                    <div className="flex flex-col space-y-4 w-1/2">   
                         <RadioGroup 
                             value={currentMealType ?? ""}
                             onValueChange={(val) => onMealTypeChange(val as MealType)}
@@ -112,11 +132,11 @@ export default function CalorieDetailModal({
                                 <Label htmlFor="dinner">夕食</Label>
                             </div>
                         </RadioGroup>
-                        <p className="text-2xl font-bold ml-25 mt-3">材料</p>
+                    <p className="text-2xl font-bold ml-25 mt-3">材料</p>
                         
-                        <input 
-                            className="border border-black-500 rounded-md w-60 h-100 text-center flex-items-center mt-2 "
-                            placeholder="例：人参：2分の1本"
+                        <textarea 
+                            className="border border-black-500 rounded-md p-2 w-full h-[150px] mt-2 resize-none"
+                            placeholder="例：人参：2分の1本、じゃがいも2個・・・"
                             value={material}
                             onChange={ (e) => {
                                 setMaterial(e.target.value)
@@ -125,12 +145,25 @@ export default function CalorieDetailModal({
                         />
                     </div>
 
-                    <div className="flex flex-col  gap-5">
-                        <div className="border rounded  ml-10 w-150 h-100 flex items-center justify-center">
-                            <p>（画像）</p>
+                    <div className="flex flex-col  space-y-5 w-1/2 items-center">
+                        <div className=" relative border rounded w-[300px] h-[200px] flex items-center justify-center">
+                            <div className = "w-60 h-50">
+                                {imageSrcBase64 ? (
+                                    <Image
+                                        src={imageSrcBase64}
+                                        alt="Preview"
+                                        layout="fill"
+                                        objectFit="contain" 
+                                    /> 
+                                ):(
+                                    <span className="text-gray-500">画像がありません</span>
+                                )};
+                            </div>
+
+                            
                         </div>
                         <div>
-                            <input className="border border-black-500 rounded-md h-12 w-150 mt-3 ml-10 text-center flex items-center bg-gray-100"
+                            <input className="border border-black-500 rounded-md h-12 w-[300px]  text-center flex items-center bg-gray-100"
                                 placeholder="例：カレーライス"
                                 value={mealName}//入力されたものを表示
                                 onChange={ (e) => {
@@ -140,7 +173,7 @@ export default function CalorieDetailModal({
                             />
                         </div>
                         <div>
-                            <Button className="text-2xl border border-black-500 rounded-md h-12 w-150 mt-3 ml-10 text-center flex-items-center bg-blue-500 hover:bg-blue-400"
+                            <Button className="text-2xl border border-black-500 rounded-md h-12 w-[300px] mt-3 ml-10 text-center flex-items-center bg-blue-500 hover:bg-blue-400"
                                     onClick={handleSend}
                                     disabled={isLoading}
                             >

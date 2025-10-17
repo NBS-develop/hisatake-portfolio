@@ -4,6 +4,7 @@
 
 import {useState} from 'react';
 import{Button} from "@/components/ui/button"
+import Image from 'next/image'
 import {
   Dialog,
   DialogContent,
@@ -25,6 +26,7 @@ interface CalorieResultModalProps{
         meal_name: string;
         calorie: string;
         comment: string} | null;
+        imageSrcBase64:string | null;
         
 }
 
@@ -32,6 +34,7 @@ export default function CalorieResultModal({
     isOpen,
     onOpenChange,
     resultData,
+    imageSrcBase64,
 
 }:CalorieResultModalProps){
     
@@ -43,17 +46,29 @@ export default function CalorieResultModal({
                         カロリー詳細結果
                     </DialogTitle>
                 </DialogHeader>
-                <div>
-                    <div>
+                <div className="flex">
+                    <div className="w-1/2 p-4">
+                        <div className="relative w-full h-[200px] border border-gray-300 flex items-center justify-center">
+                            {imageSrcBase64 ? (
+                                <Image
+                                        src={imageSrcBase64}
+                                        alt="Preview"
+                                        layout="fill"
+                                        objectFit="contain"
+                                />
+                            ):(
+                                //画像が未選択の場合
+                                <span className="text-gray-500">画像がありません</span>
+                            )}
+                        </div>
                         {resultData ? (
                             <div>
                                 <p><strong>料理名：</strong>{resultData.meal_name}</p>
-                                <p><strong>カロリー：</strong>{resultData.calorie}</p>
                                 <p><strong>総カロリー：</strong>{resultData.totalCalories || '不明'} kcal</p>
                                 <p><strong>タンパク質：</strong>{resultData.protein || '不明'} g</p>
                                 <p><strong>脂質：</strong>{resultData.fat || '不明'} g</p>
                                 <p><strong>炭水化物：</strong>{resultData.carbo || '不明'} g</p>
-                                <p><strong>コメント：</strong>{resultData.comment}</p>
+                                
                             </div>
                         ) : (
                         <p>まだ結果がありません</p>
