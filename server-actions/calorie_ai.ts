@@ -14,6 +14,7 @@ const CALORIEHISTORY_TABLE = `CalorieHistory`
 
 const supabaseUrl = process.env.SUPABASE_URL!
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+const supabaseAnonKey = process.env.SUPABASE_KEY!
 
 const supabaseAdmin = createClient(supabaseUrl,serviceRoleKey,{
     auth:{
@@ -41,7 +42,7 @@ interface CalorieFormData{
 }
 //環境変数を読み込む
 const openai_api_key = process.env.OPENAI_API_KEY!//"!"絶対にnullでもundefainedでもない
-const supabase = createClient(supabaseUrl, process.env.SUPABASE_KEY!);
+const supabase = createClient(supabaseUrl, supabaseAnonKey!);
 
 export async function deleteUserByEmail(email: string){
     if(!email) {
@@ -77,6 +78,7 @@ export async function deleteUserByEmail(email: string){
 }
 
 export async function calculateCalorie(formData:FormData){
+  let calorieResult: any = null;//tryの外で初期化
   try{
     //クライアントから送られたFormDataから抽出
     // const formData = await request.formData();
@@ -158,7 +160,7 @@ export async function calculateCalorie(formData:FormData){
     
     //OpenAI APIにリクエスト送信、受け取り
     const response = await openai.chat.completions.create({
-        model: 'gpt-5-mini',
+        model: 'gpt-4o-mini',
         messages: [
             {role: "system",content: systemPrompt}, //AIに前提条件・ルールを伝える
             {role: "user" , content: userContent}  //人間の質問
@@ -178,7 +180,7 @@ export async function calculateCalorie(formData:FormData){
     }
 
     //JSON文字列をJavaScriptオブジェクトに変換
-    const calorieResult = JSON.parse(jsonText);
+    calorieResult = JSON.parse(jsonText);
     
     if(userId && calorieResult.totalCalories){
         console.log(`SupabaseにユーザーID：${userId}のカロリー履歴を保存します。`);
@@ -194,23 +196,23 @@ export async function calculateCalorie(formData:FormData){
                 mealtime: mealType,
                 picture: imageUrlForOpenAI || '',
                 date: new Date().toISOString().split('T')[0],//YYYY-MM--DD形式
-            });
-        if(dbError) {
+            }); 
+        if (userId && calorieResult && calorieResult.totalCalories){
             console.error("Supabaseへの保存エラー：",dbError);
             //データ保存失敗はAI計算の成功には影響しないため、計算結果を返す
-        }
     }else {
         console.log("ユーザーIDがないため、またはカロリー結果がないためデータベースに保存しません。")
+    } 
+    }}catch (error) {
+        console.error(error);
+        throw new Error(error instanceof Error ? error.message: 'Unknown error');
     }
-     
-
-  }catch (error) {
-    console.error(error);
-    throw new Error(error instanceof Error ? error.message: 'Unknown error');
-  }
+    return calorieResult;
+    
+    }
 
 
-}//status:〇〇➡200:OK、400番台:クライアント側の問題、500番台:サーバー側の問題
+//status:〇〇➡200:OK、400番台:クライアント側の問題、500番台:サーバー側の問題
 
 
 

@@ -27,6 +27,7 @@ export default function Register() {
                 console.log(data);
             alert("登録メールを送信しました。メールをご確認ください。");
             
+            
         } catch (error) {
             alert(`登録中にエラーが発生しました: ${error instanceof Error ? error.message : "不明なエラー"}`);
         }

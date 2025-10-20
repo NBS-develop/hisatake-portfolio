@@ -211,7 +211,7 @@ export default function Home() {
           <DialogTitle className="text-5xl text-center mt-5">
             カロリー計算アプリ
           </DialogTitle>
-          <button className="">ログアウト</button>
+          {/* <button className="">ログアウト</button> */}
         </DialogHeader>
         <div className="flex gap-10 items-start">
           <div className="flex flex-col ">
