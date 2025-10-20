@@ -18,5 +18,6 @@
 <img width="1919" height="863" alt="スクリーンショット 2025-10-20 090652" src="https://github.com/user-attachments/assets/1cd34635-944f-4642-957a-9ae5a4e359f4" />
 
 
+<img width="1044" height="728" alt="スクリーンショット 2025-10-20 115438" src="https://github.com/user-attachments/assets/511c9e6c-8320-44e5-9814-b96257680135" />
 
 
