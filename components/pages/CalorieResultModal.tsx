@@ -22,7 +22,7 @@ interface CalorieResultModalProps{
         totalCalories?:number;
         protein?:number;
         fat?:number;
-        carbo?:number;
+        carbs?:number;
         meal_name: string;
         calorie: string;
         comment: string} | null;
@@ -67,7 +67,7 @@ export default function CalorieResultModal({
                                 <p><strong>カロリー：</strong>{resultData.totalCalories || '不明'} kcal</p>
                                 <p><strong>タンパク質：</strong>{resultData.protein || '不明'} g</p>
                                 <p><strong>脂質：</strong>{resultData.fat || '不明'} g</p>
-                                <p><strong>炭水化物：</strong>{resultData.carbo || '不明'} g</p>
+                                <p><strong>炭水化物：</strong>{resultData.carbs || '不明'} g</p>
                                 
                             </div>
                         ) : (

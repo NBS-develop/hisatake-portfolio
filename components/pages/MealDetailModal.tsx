@@ -3,6 +3,7 @@
 'use client'
 
 import {useEffect, useState} from 'react';
+import {createClientComponentClient} from '@supabase/auth-helpers-nextjs'
 import{Button} from "@/components/ui/button"
 import {
   Dialog,
@@ -43,20 +44,42 @@ export default function CalorieDetailModal({
     imageFile,
     imageSrcBase64
 }:CalorieDetailModalProps){
+    const[userId,setUserId] = useState<string | null>(null);//UUIDのためstring型
     const[material,setMaterial] = useState<string>("");
     const[mealName,setMealName] = useState<string>("");
     const[isLoading,setIsLoading] = useState(false);
+    const[isUserLoading,setIsUserLoading] = useState(true);
     const[lastRequestTime,setLastRequestTime] = useState<number>(0);
+    const supabase = createClientComponentClient();
 
     //モーダルが閉じたときStateをクリーンアップ
     useEffect(() => {
+        const fetchUser = async () => {
+            setIsUserLoading(true);
+            try{
+                const {data:{user}} = await supabase.auth.getUser();
+                if (user) {
+                    setUserId(user.id);//ユーザーIDセット
+                }
+            }catch(error){
+                console.error("Failed to fetch user:",error);
+            }finally{
+                setIsUserLoading(false);//取得完了
+            }
+        };
+
+        if (isOpen) {
+            fetchUser();
+        }
         if (!isOpen) {
             const timer = setTimeout(() => {
                 setIsLoading(false);
             },300);
             return () => clearTimeout(timer);
-        } 
+        }
     },[isOpen]);
+
+    
 
     const handleSend = async () =>{
 
@@ -68,11 +91,16 @@ export default function CalorieDetailModal({
             alert("朝食 昼食 夕食を選択してください");
             return;
         }
+        if(!userId) {
+            alert("ログイン情報が見つかりません。再ログインしてください");
+            return;
+        }
         //ここで送りたいデータをまとめる
         const formData = new FormData();
         formData.append("meal_name",mealName);
         formData.append("material",material);
         formData.append("meal_type",currentMealType || "");
+        formData.append("user_id",userId);//ユーザーIDを追加
         if(imageFile){
             formData.append("image",imageFile) ;
         }
@@ -175,9 +203,9 @@ export default function CalorieDetailModal({
                         <div>
                             <Button className="text-2xl border border-black-500 rounded-md h-12 w-[300px] mt-3 ml-10 text-center flex-items-center bg-blue-500 hover:bg-blue-400"
                                     onClick={handleSend}
-                                    disabled={isLoading}
+                                    disabled={isLoading || isUserLoading}
                             >
-                                {isLoading ? '計算中...':'計算'}
+                                {isLoading || isUserLoading ?  '計算中...':'計算'}
                             </Button>
                         </div>
 

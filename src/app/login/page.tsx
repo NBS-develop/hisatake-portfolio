@@ -4,7 +4,7 @@
 
 import { useState } from 'react';
 
-import { supabase } from '../../../server-actions/supabase';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import{Eye, EyeOff} from 'lucide-react'
 import{useRouter} from 'next/navigation';
 
@@ -12,6 +12,7 @@ export default function Register() {
     const[email,setEmail] = useState('');
     const[password, setPassword] = useState('');
     const[showPassword,setShowPassword] = useState(false);
+    const supabase = createClientComponentClient();
     const togglePasswordVisibility = () => {
         setShowPassword(!showPassword)
     }
@@ -102,6 +103,15 @@ export default function Register() {
                 </div>
 
             </form>
+            <div className="mt-6 text-center">
+                <p className="text-gray-500 text-lg">アカウントをお持ちでない方は👇</p>
+                <button
+                    onClick={() => router.push('/register')}
+                    className="bg-yellow-200 text-black-500 font-bold text-lg hover:bg-yellow-300 rounded-md mt-3 h-10 w-50"
+                >
+                    新規登録はこちらへ
+                </button>
+            </div>
         </div>
     </div>
     )

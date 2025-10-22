@@ -31,7 +31,7 @@ export interface CreateHistory {
     calories:string;
     protein:string;
     fat:string;
-    carbo:string;
+    carbs:string;
     mealtime:string;
     picture:string;
     date:string;
@@ -86,7 +86,7 @@ export async function calculateCalorie(formData:FormData){
     const mealName = formData.get('meal_name') ?? "" as String;
     const material = formData.get('material') ?? "" as String;
     const mealType = formData.get('meal_type') ?? "" as String;
-    const userId = formData.get('user_id') ?? "" as String;
+    const userId = formData.get('user_id') ?? "" as String;//ユーザーID取得
     //画像抽出
     const imageFile = formData.get('image') as File | null;
 
@@ -132,7 +132,7 @@ export async function calculateCalorie(formData:FormData){
         "totalCalories":number,
         "protein":number,
         "fat": number,
-        "carbo": number,    
+        "carbs": number,    
     }
     JSONオブジェクトの形式で、説明文やマークダウンはつけずに結果のみを出力してください。`;
 
@@ -182,34 +182,55 @@ export async function calculateCalorie(formData:FormData){
     //JSON文字列をJavaScriptオブジェクトに変換
     calorieResult = JSON.parse(jsonText);
     
+    //Supabaseに自動で保存
     if(userId && calorieResult.totalCalories){
         console.log(`SupabaseにユーザーID：${userId}のカロリー履歴を保存します。`);
-        const {error: dbError} = await supabase
+        const {error: dbError} = await supabaseAdmin
             .from(CALORIEHISTORY_TABLE)
             .insert({
                 user_id: userId,
-                mealname: mealName,
+                mealname: mealName.toString(),
                 calories: calorieResult.totalCalories.toString(),
-                protein: calorieResult.fat.toString(),
+                protein: calorieResult.protein.toString(),
                 fat: calorieResult.fat.toString(),
-                carbo: calorieResult.carbo.toString(),
+                carbs: calorieResult.carbs.toString(),
                 mealtime: mealType,
                 picture: imageUrlForOpenAI || '',
                 date: new Date().toISOString().split('T')[0],//YYYY-MM--DD形式
             }); 
-        if (userId && calorieResult && calorieResult.totalCalories){
+        if (dbError){
             console.error("Supabaseへの保存エラー：",dbError);
+        }else{
+            console.log("Supabaseへの保存に成功しました。")
+        }
             //データ保存失敗はAI計算の成功には影響しないため、計算結果を返す
     }else {
         console.log("ユーザーIDがないため、またはカロリー結果がないためデータベースに保存しません。")
     } 
-    }}catch (error) {
+    }catch (error) {
         console.error(error);
         throw new Error(error instanceof Error ? error.message: 'Unknown error');
     }
     return calorieResult;
     
-    }
+}
+
+// export async function saveCalorie(data:CreateHistory):Promise<CreateHistory | null> {
+//     const{data:createData,error} = await supabase
+//         .from(CALORIEHISTORY_TABLE)
+//         .insert([data])
+//         .select()
+//         .single();
+
+//         if(error) {
+//             console.error("createHistory error:",error);
+//             return null;
+//         }
+//         return createData;
+// }
+
+
+
 
 
 //status:〇〇➡200:OK、400番台:クライアント側の問題、500番台:サーバー側の問題

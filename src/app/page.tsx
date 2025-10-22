@@ -3,11 +3,13 @@
 'use client'
 //useRef：DOM要素への参照を保持するために使用
 //ChangeEvent：イベントハンドラーの型定義
-import {useState,useRef,ChangeEvent} from 'react';
+import {useState,useRef,ChangeEvent,useEffect} from 'react';
 import Head from 'next/head';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AddAPhotoIcon from '@mui/icons-material/AddAPhoto';
 import NextImage from "next/image"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import {useRouter} from 'next/navigation';
 
 import{Button} from "@/components/ui/button"
 import {
@@ -20,8 +22,9 @@ import {
 } from "@/components/ui/dialog"
 import CalorieDetailModal from "../../../my-next-app/components/pages/MealDetailModal"
 import CalorieResultModal from "../../../my-next-app/components/pages/CalorieResultModal"
-import { DeleteIcon } from 'lucide-react';
+import { DeleteIcon, SubscriptIcon } from 'lucide-react';
 import { blob } from 'stream/consumers';
+import { createClient } from '@supabase/supabase-js';
 // import{POST} from '../../../my-next-app/server-actions/calorie_ai'
 type FormData = {
   model:string
@@ -31,7 +34,7 @@ interface CalorieResult{
   totalCalories: number;
   protein:number;
   fat:number;
-  carbo:number;
+  carbs:number;
 }
 type MealType = 'breakfast' | 'lunch' | 'dinner' |null;
 
@@ -59,6 +62,49 @@ export default function Home() {
   const handleCameraButtonClick = () => {
     cameraInputRef.current?.click();
   }
+  const supabase = createClientComponentClient();
+  const router = useRouter();
+  const[isAuthLoading,setIsAuthLoading] = useState(true);
+
+  useEffect(() => {
+    async function checkUserSession() {
+      const {data:{user},error} = await supabase.auth.getUser();
+
+      if(error || !user) {
+        //ログインしていない場合、ログインページへリダイレクト
+        console.log("ユーザーセッションが見つかりません。ログインページへリダイレクトします。");
+        router.push('/login');
+      }else{
+        //ログインしている場合、ローディングを解除
+        console.log("ユーザーセッションを確認しました:",user.id);
+        //ここでuser.idをstateに保存することも可能だが、今回はモーダル側で取得させる
+        setIsAuthLoading(false);
+      }
+    }
+    checkUserSession();
+
+    //リアルタイムでセッション変更を監視
+    const {data:{subscription}} = supabase.auth.onAuthStateChange((event, session) => {
+      if(event === 'SIGNED_OUT' || !session) {
+        router.push('/login');
+      }else if(event === 'SIGNED_IN'){
+        setIsAuthLoading(false);
+      }
+    });
+    return () => {
+      subscription.unsubscribe();
+    };
+  },[supabase,router]);
+
+  //認証情報が確定するまでメインコンテンツの表示をブロック
+  if (isAuthLoading){
+    return(
+      <div className="flex justify-center items-center min-h-screen">
+        <p>認証情報を確認中...</p>
+      </div>
+    );
+  }
+  
 
   //画像圧縮関数
   const compressImage = async (file: File): Promise<File> => {//受け取り：
@@ -241,7 +287,7 @@ export default function Home() {
                   </>
                 ):(
                   //画像が未選択の場合
-                  <span className="text-gray-500">右のカメラかファイルをを選択してください</span>
+                  <span className="text-gray-500">右のカメラかファイルを選択してください</span>
                 )}
               </div> 
             
@@ -318,7 +364,8 @@ export default function Home() {
                 </thead>
               </table>
             </div>
-
+            
+            {/* MealdetailModalから結果を受け取る */}
             <CalorieDetailModal
               isOpen={detailModalOpen}
               onOpenChange={setDetailModalOpen}
@@ -331,16 +378,17 @@ export default function Home() {
               imageSrcBase64={imageSrcBase64}
               //受信したデータから表示用に必要な情報をを作り、Stateに格納と同時に結果表示用のモーダルオープン
               onCalculate={(data) => {
+                //AIから返ってきたデータを整形
                 setAiResult({
                   meal_name: mealName,
                   calorie: `${data.totalCalories} kcal`,
-                  comment:`P:${data.protein}g / F:${data.fat}g / C:${data.carbo}g`,
+                  comment:`P:${data.protein}g / F:${data.fat}g / C:${data.carbs}g`,
                   totalCalories: data.totalCalories,
                   protein:data.protein,
                   fat: data.fat,
-                  carbo:data.carbo
+                  carbs:data.carbs
                 });
-                setResultModalOpen(true);
+                setResultModalOpen(true);//結果モーダルを開く
               }}
             />
             <CalorieResultModal

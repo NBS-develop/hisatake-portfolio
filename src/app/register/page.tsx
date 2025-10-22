@@ -1,9 +1,9 @@
-//register.tsx
+//register/page.tsx
 
 'use client'
 
 import { useState } from 'react';
-
+import { registerUser } from '../../../server-actions/auth_actions'; // ファイルパスは適宜修正
 import { supabase } from '../../../server-actions/supabase';
 import{Eye, EyeOff} from 'lucide-react' ;
 import{useRouter} from 'next/navigation';
@@ -21,17 +21,15 @@ export default function Register() {
     const doRegister = async (e: React.FormEvent) => {
         e.preventDefault(); 
         try {
-            // supabaseで用意されているユーザー登録の関数
-            const { data, error } = await supabase.auth.signUp({ email, password });
-            if(error) throw new Error(error.message)
-                console.log(data);
-            alert("登録メールを送信しました。メールをご確認ください。");
+            //サーバーアクション経由で登録とプロファイル作成を一括実行
+            const result = await registerUser(email,password);
+
+            alert(result.message);
             
             
         } catch (error) {
             alert(`登録中にエラーが発生しました: ${error instanceof Error ? error.message : "不明なエラー"}`);
         }
-        
     }
 
     return (
