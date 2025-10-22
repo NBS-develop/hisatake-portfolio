@@ -197,6 +197,7 @@ export async function calculateCalorie(formData:FormData){
                 mealtime: mealType,
                 picture: imageUrlForOpenAI || '',
                 date: new Date().toISOString().split('T')[0],//YYYY-MM--DD形式
+                created_at:new Date().toISOString(),
             }); 
         if (dbError){
             console.error("Supabaseへの保存エラー：",dbError);
@@ -215,19 +216,76 @@ export async function calculateCalorie(formData:FormData){
     
 }
 
-// export async function saveCalorie(data:CreateHistory):Promise<CreateHistory | null> {
-//     const{data:createData,error} = await supabase
-//         .from(CALORIEHISTORY_TABLE)
-//         .insert([data])
-//         .select()
-//         .single();
+export async function getWeekCalorie(userId:string) {
+    if(!userId) {
+        throw new Error('User ID is required to fetch calorie history');
+    }
 
-//         if(error) {
-//             console.error("createHistory error:",error);
-//             return null;
-//         }
-//         return createData;
-// }
+    //sevenDaysAgoに現在の日付と時刻を持つDateオブジェクトを格納する
+    const sevenDaysAgo = new Date(); 
+    //現在の日付から7を引いた値に日付を再設定(sevenDaysAgoは正確に7日前の日付に更新)
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    //sevenDaysGo.toISOString=Dateオブジェクトを文字列に変換
+    //.split('T')[0]=文字列をTで区切る
+    const dateFilter = sevenDaysAgo.toISOString().split('T')[0];
+
+    const{data,error} = await supabase
+        .from(CALORIEHISTORY_TABLE)
+        .select(`id,mealname,calories,mealtime,date,picture`)
+        //dateカラムが過去7日間の日付以降であるものをフィルタリング
+        .gte('date',dateFilter)
+        .eq('user_id',userId)
+        .order('date',{ascending:false});//新しい日付を先に
+    if (error){
+        console.error("Error fetching past week calories:",error);
+        throw new Error('Failed to fetch calorie history.');
+    }
+
+    //データを日ごとに集計
+    const groupedData: Record<string,{total:number,details:typeof data}> = {};
+    data.forEach(item => {
+        const dateKey = item.date
+        const calorie = parseInt(item.calories);//文字列を数値に変換
+
+        if(!groupedData[dateKey]){
+            groupedData[dateKey] = {total: 0, details: []};
+        }
+
+        groupedData[dateKey].total += isNaN(calorie) ? 0 : calorie;
+        groupedData[dateKey].details.push(item);
+    });
+
+    //UI表示用に整形(日付の降順)
+    const result = Object.keys(groupedData)
+        .sort((a,b) => b.localeCompare(a))
+        .map(date => ({
+            date:date,
+            totalCalories:groupedData[date].total,
+            details:groupedData[date].details,
+        }));
+    return result;
+}
+
+export async function getDailyMealDetails(userId: string, date: string){
+    if(!userId || !date){
+        throw new Error('User ID and date are required to fetch daily details');
+    }
+
+    const {data,error} = await  supabase
+        .from(CALORIEHISTORY_TABLE)
+        .select(`id,mealname,calories,protein,fat,carbs,mealtime,picture,created_at`)
+        .eq('user_id',userId)
+        .eq('date',date)//特定の日付でフィルタ
+        .order('created_at',{ascending:true,nullsFirst:false});//作成時間で昇順ソート
+    if(error){
+        console.error("Error fetching daily meal details:",error);
+        throw new Error('Failed to fetch daily meal details');
+    }
+    return data;
+
+}
+
+
 
 
 

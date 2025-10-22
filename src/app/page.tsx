@@ -22,9 +22,10 @@ import {
 } from "@/components/ui/dialog"
 import CalorieDetailModal from "../../../my-next-app/components/pages/MealDetailModal"
 import CalorieResultModal from "../../../my-next-app/components/pages/CalorieResultModal"
+import CalorieHistoryModal from 'components/pages/CalorieHistoryModal';
 import { DeleteIcon, SubscriptIcon } from 'lucide-react';
-import { blob } from 'stream/consumers';
-import { createClient } from '@supabase/supabase-js';
+import {getWeekCalorie,getDailyMealDetails} from "../../server-actions/calorie_ai";
+
 // import{POST} from '../../../my-next-app/server-actions/calorie_ai'
 type FormData = {
   model:string
@@ -37,6 +38,24 @@ interface CalorieResult{
   carbs:number;
 }
 type MealType = 'breakfast' | 'lunch' | 'dinner' |null;
+
+interface DailyCalorieSummary{
+  date:string;//YYYY-MM-DD
+  totalCalories:number;
+  //詳細データはpage.tsxのリスト表示では使用しないが、型としては存在
+  details:any[];
+}
+interface DailyMealDetail{
+  id:number;
+  mealname:string;
+  calories:string;
+  protein:string;
+  fat:string;
+  carbs:string;
+  mealtime:string;
+  picture:string;
+  created_at:string;//データのソート(昇順・降順など)に使う
+}
 
 export default function Home() {
   const[imageFile,setImageFile] = useState<File | null>(null);
@@ -51,6 +70,12 @@ export default function Home() {
   const[aiResult,setAiResult] = useState<any | null>(null);
   const[imageSrcBase64,setImageSrcBase64] = useState<string | null>(null);
   const[isCompressing,setIsCompressing] = useState(false);
+  const[pastCalorieHistory,setPastCalorieHistory] = useState<DailyCalorieSummary[]>([]);
+  const[currentUserId,setCurrentUserId] = useState<string | null>(null);
+  const[historyModalOpen,setHistoryModalOpen] = useState(false);
+  const[selectedHistoryDate,setSelectedHistoryDate] = useState<string | null>(null);
+  const[selectedMealDetails,setSelectedMealDetails] = useState<DailyMealDetail[]>([]);
+
   //ファイルインプット用
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -66,6 +91,53 @@ export default function Home() {
   const router = useRouter();
   const[isAuthLoading,setIsAuthLoading] = useState(true);
 
+  //過去のデータを取得
+  const fetchCalorieHistory = async (userId:string) => {
+    try{
+      //サーバーアクションを呼び出し
+      const history = await getWeekCalorie(userId);
+      setPastCalorieHistory(history);
+    }catch(err){
+      console.error("過去のカロリー履歴の取得エラー：",err);
+      setError("過去のカロリー履歴の読み込みに失敗しました。");
+    }
+  }
+
+  //詳細ボタンがクリックされたときのハンドラ
+  const handleDetailButtonClick = async (date: string) => {
+    if(!currentUserId){
+      alert("ユーザー認証情報が見つかりません");
+      return;
+    }
+    try{
+      //サーバーアクションを呼び出し、特定の日付の詳細データを取得
+      const details = await getDailyMealDetails(currentUserId,date);
+
+      //データのソート(フロントエンド側で順序を保証)
+      const mealOrder: {[key:string]: number} = {
+        'breakfast':1,'lunch':2,'dinner':3
+      };
+
+      const sortedDetails = details.sort((a,b) => {
+        const orderA = mealOrder[a.mealtime] || 99;
+        const orderB = mealOrder[b.mealtime] || 99;
+
+        if (orderA !== orderB) {
+          return orderA - orderB;
+        }
+          //mealtimeが同じ場合はcreated_atでソート(新しいデータ優先)
+          //created_atがnullの場合は文字列として最後に来るように
+          return (a.created_at || "").localeCompare(b.created_at || "");
+      });
+      setSelectedMealDetails(sortedDetails as DailyMealDetail[]);
+      setSelectedHistoryDate(date);
+      setHistoryModalOpen(true);
+    }catch(err){
+      console.error("日の詳細データの取得エラー",err);
+      setError("日の詳細データの読み込みに失敗しました。");
+    }
+  };
+
   useEffect(() => {
     async function checkUserSession() {
       const {data:{user},error} = await supabase.auth.getUser();
@@ -77,8 +149,9 @@ export default function Home() {
       }else{
         //ログインしている場合、ローディングを解除
         console.log("ユーザーセッションを確認しました:",user.id);
-        //ここでuser.idをstateに保存することも可能だが、今回はモーダル側で取得させる
+        setCurrentUserId(user.id)//ユーザーIDをStateに保存
         setIsAuthLoading(false);
+        fetchCalorieHistory(user.id);//ログイン時に履歴を取得
       }
     }
     checkUserSession();
@@ -88,6 +161,10 @@ export default function Home() {
       if(event === 'SIGNED_OUT' || !session) {
         router.push('/login');
       }else if(event === 'SIGNED_IN'){
+        if(session.user.id){
+          setCurrentUserId(session.user.id);
+          fetchCalorieHistory(session.user.id);
+        }
         setIsAuthLoading(false);
       }
     });
@@ -250,6 +327,24 @@ export default function Home() {
     console.log("テスト")
   }
 
+  const formatDateToRelative = (dateString: string) => {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const targetDate = new Date(dateString);
+    targetDate.setHours(0,0,0,0);
+
+    //1日のミリ秒数
+    const oneDay = 1000 * 60 * 60 * 24;
+    //日付の差(ミリ秒)
+    const diffTime = today.getTime() -  targetDate.getTime();
+    //日付の差(日)
+    const diffDays = Math.floor(diffTime / oneDay);
+
+    if(diffDays === 0) return '今日';
+    if(diffDays === 1) return '昨日';
+    return`${diffDays}日前`;
+  };
+
     return( 
         
     <Dialog>
@@ -351,18 +446,33 @@ export default function Home() {
             </div>
           </div>
             <div>
-              <table className="text-2xl border rounded mt-10 mr-10 w-130 h-125  ml-20  ">
-                <thead>
-                  <tr>
-                    <td className="pl-10">1日前の合計:1500キロカロリー</td>
-                    <td className="pr-10">
-                      <Button>
-                        詳細
-                      </Button>
-                    </td>
-                  </tr>
-                </thead>
-              </table>
+              {/* 過去のカロリー履歴表示 */}
+              <div className="text-2xl border rounded mt-10 mr-10 w-130 h-125 ml-20">
+                {pastCalorieHistory.length === 0 ? (
+                  <p className="p-4 text-gray-500">過去一週間のカロリー履歴がありません</p>
+                ):(
+                  <table className="w-full">
+                    <tbody>
+                      {pastCalorieHistory.map((day,index) =>(
+                        <tr key={day.date} className="border-b last,:border-b-0">
+                          <td className="pl-4 py-3">
+                            {formatDateToRelative(day.date)}の合計:**{day.totalCalories}**kcal
+                          </td>
+                          <td className='pr-4 py-3 text-right'>
+                            <Button
+                              onClick={() => handleDetailButtonClick(day.date)}
+                              className="bg-green-500 hover:bg-green-400 text-sm h-8"
+                            >
+                              詳細
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+              
             </div>
             
             {/* MealdetailModalから結果を受け取る */}
@@ -398,11 +508,13 @@ export default function Home() {
               resultData={aiResult}
               imageSrcBase64={imageSrcBase64}
             />
-            </div>
-
-          
-          
-        
+            <CalorieHistoryModal
+              isOpen={historyModalOpen}
+              onOpenChange={setHistoryModalOpen}
+              historyData={selectedMealDetails}
+              selectedDate={selectedHistoryDate}
+            />
+          </div>
     </Dialog> 
     );
   }
