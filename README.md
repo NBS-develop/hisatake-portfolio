@@ -21,3 +21,6 @@
 <img width="1044" height="728" alt="スクリーンショット 2025-10-20 115438" src="https://github.com/user-attachments/assets/511c9e6c-8320-44e5-9814-b96257680135" />
 
 
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
