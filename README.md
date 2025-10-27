@@ -1,41 +1,26 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<img width="1847" height="883" alt="スクリーンショット 2025-10-20 090333" src="https://github.com/user-attachments/assets/c3d1066f-6d2f-454b-b9be-0a2936a0a31e" />
 
-## Getting Started
+<img width="1423" height="722" alt="スクリーンショット 2025-10-20 090424" src="https://github.com/user-attachments/assets/f851147d-7991-4891-af37-7d0a27966519" />
 
-First, run the development server:
+<img width="1919" height="872" alt="スクリーンショット 2025-10-20 090851" src="https://github.com/user-attachments/assets/7c7ba96c-2b3c-4fb0-b278-90f25d7df56c" />
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+<img width="1919" height="868" alt="スクリーンショット 2025-10-20 090543" src="https://github.com/user-attachments/assets/65d926c1-6b0b-4440-87d7-2e213aad1ac3" />
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+<img width="1849" height="871" alt="スクリーンショット 2025-10-20 113213" src="https://github.com/user-attachments/assets/b6c3bfbb-3b3a-4ced-a868-35611639242c" />
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+<img width="1893" height="997" alt="スクリーンショット 2025-10-20 113241" src="https://github.com/user-attachments/assets/0bc0e798-ab10-4b4c-a52a-5fa7d9bb7457" />
 
-## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+<img width="1919" height="864" alt="スクリーンショット 2025-10-20 090637" src="https://github.com/user-attachments/assets/aa591228-1db2-404a-aea7-04833cd9e5e6" />
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+<img width="1919" height="863" alt="スクリーンショット 2025-10-20 090652" src="https://github.com/user-attachments/assets/1cd34635-944f-4642-957a-9ae5a4e359f4" />
 
-## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+<img width="1044" height="728" alt="スクリーンショット 2025-10-20 115438" src="https://github.com/user-attachments/assets/511c9e6c-8320-44e5-9814-b96257680135" />
+
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-
-
 
 
