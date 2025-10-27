@@ -20,14 +20,18 @@ export default function Register() {
 
     const doRegister = async (e: React.FormEvent) => {
         e.preventDefault(); 
+        console.log('クライアント：登録開始',{email,password:'***'});
         try {
             //サーバーアクション経由で登録とプロファイル作成を一括実行
             const result = await registerUser(email,password);
 
+            console.log('クライアント：登録成功',result);
             alert(result.message);
-            
+
+            router.push('/login');            
             
         } catch (error) {
+            console.error('クライアント：登録エラー',error);
             alert(`登録中にエラーが発生しました: ${error instanceof Error ? error.message : "不明なエラー"}`);
         }
     }

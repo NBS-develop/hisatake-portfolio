@@ -1,52 +1,43 @@
-//login.tsx
+//forget/page.tsx
 
 'use client'
 
 import { useState } from 'react';
-
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import{Eye, EyeOff} from 'lucide-react'
 import{useRouter} from 'next/navigation';
+import { supabase } from '../../../server-actions/supabase';
 
-export default function Register() {
-    const[email,setEmail] = useState('');
-    const[password, setPassword] = useState('');
+export default function Reset() {
+    const [email,setEmail] = useState('');
     const[showPassword,setShowPassword] = useState(false);
-    const supabase = createClientComponentClient();
     const togglePasswordVisibility = () => {
         setShowPassword(!showPassword)
     }
-    const router = useRouter();
+    const[password, setPassword] = useState('');
 
-    const doLogin = async (e:React.FormEvent) => {//フォーム送信イベントを受け取る
-        e.preventDefault();
-        try{
-            //supabaseで用意されているログインの関数
-            const {data,error} = await supabase.auth.signInWithPassword({ email,password})
-            if(error) {
-                console.error('ログインエラー詳細:',error);
-                alert(`ログインエラー:${error.message}`);
-                return;
-            }
-            console.log('ログイン成功:',data);
-            //成功時のみ遷移
-            router.push('/')
-        }catch(error){
-            //エラーメッセージ
-            console.error('ログインエラー',error);
-            alert(`ログインに失敗しました。メールアドレスまたはパスワードを確認してください:${error instanceof Error ? error.message : "不明なエラー"}`);
-        }      
+    //送信ボタンがクリックされるとdoResetEmail関数が実行
+    const sendResetEmail = async() =>{
+
+        const{data,error} = await supabase.auth.resetPasswordForEmail(email,{
+
+            redirectTo:'/forget',
+        })
+
+        if(error) throw new Error(error.message)
+            console.log(data)
+
+        alert("メールを送信しました")
     }
 
-    return(
+    return (
         <div className="flex justify-center items-center min-h-screen bg-sky-100 p-4">
             <div className="w-full max-w-lg p-8 space-y-8  ">
              <h1 className="text-6xl font-extrabold text-center text-gray-800">
-                    ログイン
+                    パスワード再設定
             </h1>
 
             {/* ログインボタンを押すとdoLoginが発生 */}
-            <form onSubmit={doLogin} className="space-y-6">
+            <form onSubmit={sendResetEmail} className="space-y-6">
                 <div className="space-y-2">
                     <label htmlFor="email" className="block text-xl font-medium text-gray-700">
                         メールアドレス
@@ -96,32 +87,16 @@ export default function Register() {
                 <div className="pt-4">
                     <button
                         type="submit"//ボタンを押すとOnSubmitが発生
-                        className='w-full sm:w-60 px-4 py-2 text-white text-lg font-semibold bg-sky-500 
-                                       rounded-lg shadow-md hover:bg-sky-600 transition duration-150 
+                        className='w-full sm:w-56 px-4 py-2 text-white text-lg font-semibold bg-blue-600 
+                                       rounded-lg shadow-md hover:bg-blue-700 transition duration-150 
                                        ease-in-out block mx-auto'
                     >
-                        ログイン
+                        パスワード再設定
                     </button>
                 </div>
-
             </form>
-            <div className="mt-6 text-center">
-                <button
-                    onClick={() => router.push('/register')}
-                    className="bg-emerald-500 text-black-500 font-bold text-lg hover:bg-emerald-600 rounded-md mt-3 h-10 w-60"
-                >
-                    新規登録はこちらへ
-                </button>
-            </div>
-            <div className="mt-6 text-center">
-                <button
-                    onClick={() => router.push('/forget')}
-                    className="text-gray-500 font-bold text-lg bhover:underline rounded-md mt-3 h-10 w-60"
-                >
-                    パスワードをお忘れの方
-                </button>
             </div>
         </div>
-    </div>
+
     )
 }

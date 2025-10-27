@@ -10,6 +10,7 @@ import AddAPhotoIcon from '@mui/icons-material/AddAPhoto';
 import NextImage from "next/image"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import {useRouter} from 'next/navigation';
+import DeleteAccountButton from 'components/pages/DeleteAccountButton'
 
 import{Button} from "@/components/ui/button"
 import {
@@ -145,6 +146,7 @@ export default function Home() {
       if(error || !user) {
         //ログインしていない場合、ログインページへリダイレクト
         console.log("ユーザーセッションが見つかりません。ログインページへリダイレクトします。");
+        setIsAuthLoading(false);
         router.push('/login');
       }else{
         //ログインしている場合、ローディングを解除
@@ -348,11 +350,17 @@ export default function Home() {
     return( 
         
     <Dialog>
-       <DialogHeader className="bg-green-300 h-25">
-          <DialogTitle className="text-5xl text-center mt-5">
+       <DialogHeader className="bg-green-300 h-25 flex flex-row items-center justify-between px-10 py-4">
+        <div className='flex-1'> </div>
+          <DialogTitle className="text-5xl flex-1 text-center ">
             カロリー計算アプリ
           </DialogTitle>
-          {/* <button className="">ログアウト</button> */}
+          {currentUserId && (
+               <div className="flex-1 flex justify-end ">
+                   {/* DeleteAccountButtonは既に上部でインポート済みと仮定 */}
+                   <DeleteAccountButton userId={currentUserId} />
+               </div>
+           )}
         </DialogHeader>
         <div className="flex gap-10 items-start">
           <div className="flex flex-col ">
